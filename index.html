@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer Expense Tracker</title>
+    <!-- Google Fonts: Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF CDN for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+      @keyframes sway {
+        0%, 100% { transform: rotate(-3deg) scale(1.04); }
+        50% { transform: rotate(3deg) scale(1.08); }
+      }
+      .logo-animate {
+        animation: sway 2.5s ease-in-out infinite;
+      }
+      body, .font-roboto {
+        font-family: 'Roboto', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      }
+    </style>
+</head>
+<body class="bg-[#f7f5ef] min-h-screen font-roboto">
+    <div class="w-full max-w-md mx-auto pb-24" id="app">
+        <!-- Premium Brand Logo Header -->
+        <header class="w-full flex items-center px-4 py-3 bg-white/90 backdrop-blur shadow-md fixed top-0 left-1/2 -translate-x-1/2 z-40 max-w-md rounded-b-2xl">
+          <div class="flex items-center gap-3">
+            <img src="assets/buildwithpiyush.png"
+                 alt="Build With Piyush Logo"
+                 class="w-16 h-16 object-contain rounded-lg border-4 border-green-100 bg-white" />
+            <span class="text-2xl font-extrabold text-green-900 tracking-tight drop-shadow-sm">Farmer Expense Tracker</span>
+          </div>
+        </header>
+        <div class="pt-20"> <!-- Increased padding for larger header -->
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white transition-all duration-700 ease-in-out opacity-100 translate-y-0">
+            <div class="w-11/12 max-w-xs flex flex-col items-center justify-center bg-white rounded-2xl p-6 transition-transform duration-500 ease-in-out shadow-xl">
+                <img src="assets/buildwithpiyush.png" alt="Build With Piyush Logo" class="w-32 h-32 object-contain mx-auto mb-6 rounded-lg border-4 border-green-100 bg-white" />
+                <h1 class="text-3xl font-bold text-center text-green-900 mb-2">Farmer Expense Tracker</h1>
+                <p class="text-base text-center text-gray-600 mb-8">Kharif &amp; Rabi: Rice, Wheat, and More</p>
+                <button id="welcome-next" class="w-14 h-14 rounded-full bg-green-700 flex items-center justify-center text-white text-3xl shadow-lg hover:bg-green-800 active:scale-95 transition-all duration-300 ease-in-out" aria-label="Continue to App">
+                    &rarr;
+                </button>
+            </div>
+        </div>
+
+        <!-- Farmer Expense Tracker Section -->
+        <section id="section-dashboard" class="section transition-opacity duration-300 ease-in-out opacity-100">
+            <div class="p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-700">This Month</h2>
+                    <button onclick="showSection('section-add')" class="bg-green-700 text-white text-base px-4 py-2 rounded-lg shadow hover:bg-green-800 active:scale-95 transition-all duration-200 font-semibold" aria-label="Add Expense">Add Expense</button>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4 flex gap-4 items-center">
+                    <div class="relative w-24 h-24 flex items-center justify-center">
+                        <svg id="donut-chart" viewBox="0 0 36 36" class="w-24 h-24">
+                            <!-- Donut chart slices will be rendered here -->
+                        </svg>
+                        <span class="absolute inset-0 flex items-center justify-center text-xl font-bold text-green-900" id="total-expense">₹ 0</span>
+                    </div>
+                    <div class="flex flex-col gap-3 text-base" id="donut-legend">
+                        <!-- Legend will be rendered here -->
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4 mt-4">
+                    <span class="text-base font-semibold text-gray-700 mb-2 block">Monthly Expenses</span>
+                    <div class="flex items-end gap-2 h-28 mt-2" id="bar-chart" aria-label="Monthly Expenses Bar Chart">
+                        <!-- Bars will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Add Expense Section -->
+        <section id="section-add" class="section hidden transition-opacity duration-300 ease-in-out opacity-0">
+            <div class="p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-bold text-green-900">Add Expense</h2>
+                    <button onclick="showSection('section-dashboard')" class="text-3xl w-14 h-14 flex items-center justify-center rounded-full bg-gray-100 shadow hover:bg-gray-200 active:bg-gray-300 transition-all duration-200 focus:outline-none" aria-label="Close Add Expense">&times;</button>
+                </div>
+                <form class="bg-white rounded-xl shadow p-4 flex flex-col gap-4" id="add-expense-form" autocomplete="off">
+                    <div class="relative" id="custom-category-dropdown">
+                        <button type="button" id="dropdown-btn" class="border rounded-lg p-3 w-full text-left focus:outline-none focus:ring-2 focus:ring-green-700 flex items-center justify-between text-base" aria-haspopup="listbox" aria-expanded="false">
+                            <span id="dropdown-selected">Seeds</span>
+                            <svg class="w-5 h-5 ml-2 inline-block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <ul id="dropdown-list" class="absolute left-0 right-0 bg-white border rounded-lg shadow-lg mt-1 z-20 hidden max-h-40 overflow-auto" tabindex="-1" role="listbox">
+                            <!-- Populated by JS -->
+                        </ul>
+                        <input type="hidden" id="expense-category" value="Seeds" />
+                    </div>
+                    <input type="number" placeholder="2,550" class="border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-700 text-base" id="expense-amount" required min="1" aria-label="Expense Amount" />
+                    <input type="date" class="border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-700 text-base" id="expense-date" required aria-label="Expense Date" />
+                    <input type="text" placeholder="Shop name" class="border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-700 text-base" id="expense-note" aria-label="Expense Note" maxlength="50" />
+                    <button type="submit" class="bg-green-700 text-white py-3 rounded-lg text-lg font-semibold shadow hover:bg-green-800 active:scale-95 transition-all duration-200 focus:outline-none" aria-label="Add Expense">Add Expense</button>
+                </form>
+                <div id="form-feedback" class="fixed left-1/2 bottom-8 -translate-x-1/2 z-50 px-4 py-2 rounded-lg shadow-lg text-white text-base font-medium opacity-0 pointer-events-none transition-all duration-300"></div>
+            </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section id="section-reports" class="section hidden transition-opacity duration-300 ease-in-out opacity-0">
+            <div class="p-4">
+                <h2 class="text-2xl font-bold text-green-900 mb-4">Reports</h2>
+                <div class="bg-white rounded-xl shadow p-4 mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-base font-semibold text-gray-700">Date</span>
+                        <span class="text-base font-semibold text-gray-700">Category</span>
+                        <span class="text-base font-semibold text-gray-700">Amount</span>
+                    </div>
+                    <div id="reports-list">
+                        <!-- Report rows will be rendered here -->
+                    </div>
+                    <div class="flex flex-col gap-2 mt-4">
+                        <button id="download-pdf" class="bg-green-700 text-white text-xs px-4 py-2 rounded-lg flex items-center gap-2 mx-auto shadow hover:bg-green-800 active:scale-95 transition-all duration-200" aria-label="Download PDF"><span>⬇️</span> Down PDF</button>
+                        <button id="clear-data" class="bg-red-600 text-white text-xs px-4 py-2 rounded-lg flex items-center gap-2 mx-auto shadow hover:bg-red-700 active:scale-95 transition-all duration-200" aria-label="Clear All Data">🗑️ Clear All Data</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Expenses Section -->
+        <section id="section-expenses" class="section hidden transition-opacity duration-300 ease-in-out opacity-0">
+            <div class="p-4">
+                <h2 class="text-2xl font-bold text-green-900 mb-4">Expenses</h2>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex flex-col gap-3" id="expenses-list">
+                        <!-- Expenses summary will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+        </div> <!-- End pt-20 wrapper -->
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-inner border-t flex justify-around items-center h-20 max-w-md mx-auto z-10 transition-colors duration-300">
+        <button onclick="showSection('section-dashboard')" class="nav-btn flex flex-col items-center justify-center relative group transition-all duration-300 w-16 h-16" id="nav-dashboard" aria-label="Home">
+            <span class="nav-icon text-3xl text-gray-400 group-hover:text-green-700 transition-all duration-200">🏠</span>
+            <span class="nav-dot w-8 h-2 rounded-full bg-green-600 mt-2 opacity-0 transition-all duration-200"></span>
+        </button>
+        <button onclick="showSection('section-add')" class="nav-btn flex flex-col items-center justify-center relative group transition-all duration-300 w-16 h-16" id="nav-add" aria-label="Add">
+            <span class="nav-icon text-3xl text-gray-400 group-hover:text-green-700 transition-all duration-200">➕</span>
+            <span class="nav-dot w-8 h-2 rounded-full bg-green-600 mt-2 opacity-0 transition-all duration-200"></span>
+        </button>
+        <button onclick="showSection('section-reports')" class="nav-btn flex flex-col items-center justify-center relative group transition-all duration-300 w-16 h-16" id="nav-reports" aria-label="Reports">
+            <span class="nav-icon text-3xl text-gray-400 group-hover:text-green-700 transition-all duration-200">📄</span>
+            <span class="nav-dot w-8 h-2 rounded-full bg-green-600 mt-2 opacity-0 transition-all duration-200"></span>
+        </button>
+        <button onclick="showSection('section-expenses')" class="nav-btn flex flex-col items-center justify-center relative group transition-all duration-300 w-16 h-16" id="nav-expenses" aria-label="Expenses">
+            <span class="nav-icon text-3xl text-gray-400 group-hover:text-green-700 transition-all duration-200">💰</span>
+            <span class="nav-dot w-8 h-2 rounded-full bg-green-600 mt-2 opacity-0 transition-all duration-200"></span>
+        </button>
+    </nav>
+
+    <script src="script.js"></script>
+</body>
+</html>
